@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model auditoria {
+  id_aud         Int       @id @default(autoincrement())
+  id_usu         Int?
+  accion         String    @db.VarChar(100)
+  tabla_afectada String    @db.VarChar(50)
+  descripcion    String?
+  fec_aud        DateTime? @default(now()) @db.Timestamp(6)
+  usuario        usuario?  @relation(fields: [id_usu], references: [id_usu])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model cita {
+  id_cit       Int            @id @default(autoincrement())
+  id_pac       Int
+  id_odo       Int
+  fec_cit      DateTime       @db.Timestamp(6)
+  dur_min      Int?           @default(30)
+  est_cit      String?        @default("Pendiente") @db.VarChar(15)
+  mot_cit      String?        @db.VarChar(100)
+  fec_res      DateTime?      @default(dbgenerated("CURRENT_DATE")) @db.Date
+  res_cit      String?        @db.VarChar(255)
+  mod_cita     String?        @default("Presencial") @db.VarChar(15)
+  odontologo   odontologo     @relation(fields: [id_odo], references: [id_odo], onDelete: Cascade)
+  paciente     paciente       @relation(fields: [id_pac], references: [id_pac], onDelete: Cascade)
+  notificacion notificacion[]
+
+  @@unique([id_odo, fec_cit], map: "uc_odo_fecha")
+  @@index([fec_cit], map: "idx_cita_fec")
+}
+
+model historial {
+  id_his     Int         @id @default(autoincrement())
+  id_pac     Int
+  id_odo     Int?
+  des_his    String
+  fec_eve    DateTime    @default(now()) @db.Timestamp(6)
+  dia_nue    DateTime?   @db.Date
+  odontologo odontologo? @relation(fields: [id_odo], references: [id_odo])
+  paciente   paciente    @relation(fields: [id_pac], references: [id_pac], onDelete: Cascade)
+
+  @@index([id_pac], map: "idx_historial_pac")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model horario {
+  id_hor     Int        @id @default(autoincrement())
+  id_odo     Int
+  hor_sem    String     @db.VarChar(10)
+  hor_ini    DateTime   @db.Time(6)
+  hor_fin    DateTime   @db.Time(6)
+  odontologo odontologo @relation(fields: [id_odo], references: [id_odo], onDelete: Cascade)
+
+  @@unique([id_odo, hor_sem, hor_ini, hor_fin], map: "uc_horario")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model notificacion {
+  id_not      Int       @id @default(autoincrement())
+  id_cit      Int
+  men_cit     String    @db.VarChar(255)
+  est_not     String?   @default("Pendiente") @db.VarChar(15)
+  fec_env_not DateTime? @db.Timestamp(6)
+  cita        cita      @relation(fields: [id_cit], references: [id_cit], onDelete: Cascade)
+
+  @@index([est_not], map: "idx_notificacion_estado")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model odontologo {
+  id_odo      Int         @id @default(autoincrement())
+  id_usu      Int
+  esp_odo     String      @db.VarChar(60)
+  tur_ate_odo String      @db.VarChar(10)
+  cita        cita[]
+  historial   historial[]
+  horario     horario[]
+  usuario     usuario     @relation(fields: [id_usu], references: [id_usu], onDelete: Cascade)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model paciente {
+  id_pac      Int         @id @default(autoincrement())
+  id_usu      Int
+  fec_reg_pac DateTime    @default(dbgenerated("CURRENT_DATE")) @db.Date
+  eda_pac     Int?
+  tip_ate_pac String      @db.VarChar(15)
+  cita        cita[]
+  historial   historial[]
+  usuario     usuario     @relation(fields: [id_usu], references: [id_usu], onDelete: Cascade)
+}
+
+model rol {
+  id_rol  Int       @id @default(autoincrement())
+  nom_rol String    @unique @db.VarChar(30)
+  usuario usuario[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model usuario {
+  id_usu      Int          @id @default(autoincrement())
+  id_rol      Int
+  nom_usu     String       @db.VarChar(50)
+  ape_usu     String       @db.VarChar(50)
+  dni_usu     String       @unique @db.Char(8)
+  car_usu     String?      @db.VarChar(50)
+  cor_usu     String       @unique @db.VarChar(100)
+  con_usu     String       @db.VarChar(255)
+  tel_usu     String?      @db.VarChar(15)
+  dir_usu     String?      @db.VarChar(100)
+  est_usu     String?      @default("Activo") @db.VarChar(10)
+  esc_pro_usu String?      @db.VarChar(50)
+  fec_reg     DateTime?    @default(now()) @db.Timestamp(6)
+  auditoria   auditoria[]
+  odontologo  odontologo[]
+  paciente    paciente[]
+  rol         rol          @relation(fields: [id_rol], references: [id_rol])
+
+  @@index([id_rol], map: "idx_usuario_rol")
+}
