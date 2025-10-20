@@ -1,32 +1,56 @@
-// src/controllers/odontologoController.js
-import prisma from '../utils/prisma.js';
+import prisma from "../utils/prisma.js";
 
-// Obtener todos los odontólogos
-export const getOdontologos = async (req, res) => {
+export const getDashboardData = async (req, res) => {
   try {
-    const odontologos = await prisma.odontologo.findMany({
-      include: { usuario: true }
-    });
-    res.json(odontologos);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error al obtener odontólogos' });
-  }
-};
+    const odontologoId = req.user.id_usu; // viene del token
+    console.log("Usuario desde JWT:", req.user);
+    console.log("odontologoId usado:", odontologoId);
 
-// Crear un odontólogo
-export const crearOdontologo = async (req, res) => {
-  try {
-    const { id_usu, esp_odo, tur_ate_odo } = req.body;
+    // 🔹 Citas del día
+    const today = new Date();
+    today.setHours(0,0,0,0); // inicio del día
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
 
-    const nuevoOdontologo = await prisma.odontologo.create({
-      data: { id_usu, esp_odo, tur_ate_odo },
+    const citasDia = await prisma.cita.findMany({
+      where: {
+        odontologo: { id_usu: odontologoId },
+        fec_cit: { gte: today, lt: tomorrow },
+      },
+      include: { paciente: true },
     });
 
-    res.json(nuevoOdontologo);
-  } catch (error) {
-    console.error('Error al crear odontólogo:', error); // 👈 muy importante
-    res.status(500).json({ message: 'Error al crear odontólogo' });
+    // 🔹 Últimas atenciones
+    const ultimasAtenciones = await prisma.cita.findMany({
+      where: {
+        odontologo: { id_usu: odontologoId },
+        est_cit: "Atendido",
+      },
+      orderBy: { fec_cit: "desc" },
+      take: 5,
+      include: { paciente: true },
+    });
+
+    // 🔹 Pacientes últimos 30 días
+    const fecha30dias = new Date();
+    fecha30dias.setDate(fecha30dias.getDate() - 30);
+
+    const pacientes30dias = await prisma.cita.findMany({
+      where: {
+        odontologo: { id_usu: odontologoId },
+        fec_cit: { gte: fecha30dias },
+      },
+      include: { paciente: true },
+    });
+
+    res.json({ 
+      citasDelDia: citasDia, 
+      timeline: ultimasAtenciones, 
+      graficoPacientes: pacientes30dias 
+    });
+
+  } catch (err) {
+    console.error("ERROR BACKEND DASHBOARD:", err);
+    res.status(500).json({ message: "Error al cargar dashboard" });
   }
 };
-

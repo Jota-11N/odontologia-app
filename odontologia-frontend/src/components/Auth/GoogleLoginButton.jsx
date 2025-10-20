@@ -1,31 +1,29 @@
+// src/components/Auth/GoogleLoginButton.jsx
 import { useEffect } from "react";
-import { googleLogin } from "../../services/authService";
+import { googleLogin } from "../../services/authService"; // 🔹 import correcto dentro de src/
 
 export default function GoogleLoginButton({ onLogin }) {
   const handleCredentialResponse = async (response) => {
     try {
       const tokenId = response.credential;
-
-      // Enviar el token al backend para validar
       const data = await googleLogin(tokenId);
 
-      // Guardar token y datos del usuario
       localStorage.setItem("token", data.token);
       localStorage.setItem("usuario", JSON.stringify(data.usuario));
 
-      // Redirigir según el rol de forma segura
-      const rol = data.usuario.rol.nom_rol.toLowerCase(); 
+      // 🔹 Redirigir automáticamente según rol
+      const rol = data.usuario.rol.nom_rol.toLowerCase();
       if (rol === "paciente") {
         window.location.href = "/pacientes";
       } else if (rol === "odontologo") {
-        window.location.href = "/odontologos";
+        window.location.href = "/odontologo/dashboard";
       } else if (rol === "admin") {
         window.location.href = "/admin";
       } else {
         window.location.href = "/";
       }
 
-      onLogin(data);
+      onLogin?.(data);
     } catch (error) {
       console.error("Error en login con Google:", error);
       alert("Error al iniciar sesión con Google");

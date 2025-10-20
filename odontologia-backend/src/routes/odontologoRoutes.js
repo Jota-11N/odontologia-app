@@ -1,10 +1,10 @@
-// src/routes/odontologoRoutes.js
-import express from 'express';
-import { getOdontologos, crearOdontologo } from '../controllers/odontologoController.js';
+import express from "express";
+import { authenticateToken } from "../middlewares/authMiddleware.js";
+import { getDashboardData } from "../controllers/odontologoController.js";
 
 const router = express.Router();
 
-router.get('/', getOdontologos);
-router.post('/', crearOdontologo);
+// Ruta para obtener los datos del dashboard del odontólogo
+router.get("/dashboard", authenticateToken, getDashboardData);
 
 export default router;

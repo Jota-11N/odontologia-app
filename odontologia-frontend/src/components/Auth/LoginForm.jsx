@@ -13,25 +13,22 @@ const LoginForm = () => {
     e.preventDefault();
     setError("");
 
-    // Validar dominio institucional
     if (!correo.endsWith("@unajma.edu.pe")) {
       setError("Solo se permiten correos institucionales @unajma.edu.pe");
       return;
     }
 
     try {
-      // Enviar al backend el objeto correcto
       const res = await login({ cor_usu: correo, con_usu: contrasena });
 
       if (res.token && res.usuario) {
-        // Guardar token y usuario en localStorage
         localStorage.setItem("token", res.token);
         localStorage.setItem("usuario", JSON.stringify(res.usuario));
 
-        // Redirigir según rol
+        // 🔹 Redirigir automáticamente según rol
         const rol = res.usuario.id_rol;
         if (rol === 1) navigate("/admin"); // Admin
-        else if (rol === 2) navigate("/odontologos"); // Odontólogo
+        else if (rol === 2) navigate("/odontologo/dashboard"); // Odontólogo
         else navigate("/pacientes"); // Paciente
       } else {
         setError("Respuesta inesperada del servidor.");

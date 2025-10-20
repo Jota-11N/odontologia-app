@@ -1,7 +1,9 @@
+// src/App.js
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import PacientesPage from "./pages/PacientesPage";
 import OdontologosPage from "./pages/OdontologosPage";
+import DashboardOdontologo from "./pages/OdontologoDashboard/DashboardOdontologo";
 import PrivateRoute from "./routes/PrivateRoute";
 
 function App() {
@@ -25,6 +27,15 @@ function App() {
           element={
             <PrivateRoute>
               <OdontologosPage />
+            </PrivateRoute>
+          }
+        />
+        {/* Dashboard odontólogo */}
+        <Route
+          path="/odontologo/dashboard"
+          element={
+            <PrivateRoute>
+              <DashboardOdontologo />
             </PrivateRoute>
           }
         />
